@@ -48,7 +48,7 @@ public class CircleObject : MonoBehaviour
     private void OnBecameInvisible()
     {
         // Respawn the object if it goes off-screen
-        Spawn();
+        if (ScoreManager.Instance.spawn == true) { Spawn(); }
     }
 
     private void OnMouseDown()
