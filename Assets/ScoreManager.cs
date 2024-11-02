@@ -5,7 +5,8 @@ public class ScoreManager : MonoBehaviour
 {
     public static ScoreManager Instance { get; private set; }  // Singleton instance
     private int score;                                         // Player's score
-    public TMP_Text scoreText;                               // Reference to the UI text element
+    public TMP_Text scoreText;
+    public float level;// Reference to the UI text element
 
     private void Awake()
     {

@@ -11,10 +11,13 @@ public class RandomSpawner : MonoBehaviour
     public int objectCount = 10;        // Total number of objects to spawn
     public float spawnInterval = 1f;    // Time delay between spawns (in seconds)
 
+  
+
     private GameObject[] spawnedObjects; // Array to store references to spawned objects
 
     void Start()
     {
+      
         spawnedObjects = new GameObject[objectCount];
         StartCoroutine(SpawnObjectsWithDelay());
     }

@@ -129,6 +129,7 @@ MonoBehaviour:
   minX: -1.5
   maxX: 1.5
   fixedY: 4
+  enemy: 1
 --- !u!61 &40141150877372759
 BoxCollider2D:
   m_ObjectHideFlags: 0
