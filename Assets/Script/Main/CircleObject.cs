@@ -24,7 +24,7 @@ public class CircleObject : MonoBehaviour
     {
         #region Initialization
         rb = GetComponent<Rigidbody2D>();
-        if (rb != null) rb.isKinematic = true;
+      //  if (rb != null) rb.isKinematic = true;
 
         audioSource = GetComponent<AudioSource>();
 
