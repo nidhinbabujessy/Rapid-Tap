@@ -1,28 +1,32 @@
 using UnityEngine;
 using TMPro;
-using System.Collections;
 using UnityEngine.SceneManagement;
+
 public class ScoreManager : MonoBehaviour
 {
     public static ScoreManager Instance { get; private set; }  // Singleton instance
     private int score;                                         // Player's score
     public TMP_Text scoreText;
-    public TMP_Text FinalSCore;// Reference to the score UI text element
-    public TMP_Text timerText;                                 // Reference to the timer UI text element
+    public TMP_Text FinalScore1;
+    public TMP_Text FinalScore2; // Final score display
+    public TMP_Text timerText;                                 // Timer display
     public float level;
+    public string NextLevel;
     public bool spawn = true;
-    private float timer = 60f; // 1-minute timer in seconds
-    public GameObject PopUp;
+    private float timer = 60f;                                 // 1-minute timer in seconds
+    public GameObject Win;
+    public GameObject fail;
+    private bool timers;
 
     private void Awake()
     {
         spawn = true;
-        PopUp.SetActive(false);
-        // Check if an instance of ScoreManager already exists
+        timers = true;
+
+        // Singleton setup
         if (Instance == null)
         {
-            Instance = this; // Assign this instance to the static variable
-            DontDestroyOnLoad(gameObject); // Keep this instance alive across scenes
+            Instance = this;
         }
         else
         {
@@ -32,23 +36,34 @@ public class ScoreManager : MonoBehaviour
 
     private void Start()
     {
-        UpdateScoreDisplay(); // Update the UI at the start
+        reasigning();
+        UpdateScoreDisplay(); // Update the score UI at the start
         UpdateTimerDisplay(); // Initialize the timer display
+    }
+
+    void reasigning()
+    {
+        if (scoreText == null) scoreText = GameObject.Find("Score").GetComponent<TMP_Text>();
+        if (timerText == null) timerText = GameObject.Find("Timer").GetComponent<TMP_Text>();
+        if (FinalScore1 == null) FinalScore1 = GameObject.Find("FinalScore1").GetComponent<TMP_Text>();
+        if (FinalScore2 == null) FinalScore2 = GameObject.Find("FinalScore2").GetComponent<TMP_Text>();
+        if (Win == null) Win = GameObject.Find("win");
+        if (fail == null) fail = GameObject.Find("fail");
     }
 
     private void Update()
     {
-        // Decrease timer only if it's greater than zero
-        if (timer > 0)
+        // Update timer only if active and score is positive
+        if (timer > 0 && score >= 0)
         {
-            timer -= Time.deltaTime; // Decrease timer by the time since the last frame
+            timer -= Time.deltaTime; // Decrease timer by frame time
             UpdateTimerDisplay();
 
             // Check if time has run out
             if (timer <= 0)
             {
                 timer = 0; // Clamp timer to 0
-                OnTimerEnd(); // Call the method to handle end of timer
+                OnTimerEnd(); // Handle end of timer
             }
         }
     }
@@ -57,59 +72,105 @@ public class ScoreManager : MonoBehaviour
     public void IncreaseScore(int amount)
     {
         score += amount;
-        UpdateScoreDisplay(); // Update the UI display
+        UpdateScoreDisplay(); // Update score UI
     }
 
     // Method to decrease score
     public void DecreaseScore(int amount)
     {
         score -= amount;
-        UpdateScoreDisplay(); // Update the UI display
+        UpdateScoreDisplay(); // Update score UI
+
+        if (score < 0 && timers) // Trigger fail condition if score is below 0
+        {
+            failMethod();
+        }
     }
 
-    // Method to update the score display
+    // Update score UI
     private void UpdateScoreDisplay()
     {
         if (scoreText != null)
         {
-            scoreText.text = score.ToString(); // Update the score text
+            scoreText.text = score.ToString(); // Display score
         }
     }
 
-    // Method to update the timer display
+    // Update timer UI
     private void UpdateTimerDisplay()
     {
         if (timerText != null)
         {
-            int seconds = Mathf.CeilToInt(timer); // Get the remaining seconds
-            timerText.text = "Time: " + seconds;  // Display as "Time: X"
+            int seconds = Mathf.CeilToInt(timer);
+            timerText.text = "Time: " + seconds; // Display as "Time: X"
         }
     }
 
-    // Method called when the timer ends 
+    // Handle timer end
     private void OnTimerEnd()
     {
-        PopUp.SetActive(true);
-        // Add logic here for what should happen when the timer ends, e.g., end the game, stop score updates
+        if (score > 0) // Trigger win condition if score is positive
+        {
+            Levels.Instance.CompleteLevel();
+            Win.SetActive(true);
+            spawn = false;
+            FinalScore1.text = score.ToString();
+        }
+        else // Trigger fail condition if score is zero or below
+        {
+            failMethod();
+        }
+
         Debug.Log("Timer has ended!");
-        spawn = false;
-        FinalSCore.text = score.ToString();
     }
 
+    // Method to handle fail condition
+    public void failMethod()
+    {
+        if (timers) // Ensure only one end condition is triggered
+        {
+            fail.SetActive(true);
+            timers = false;
+            spawn = false;
+            FinalScore2.text = score.ToString(); // Display final score
+        }
+    }
+
+    // Method to go to home scene and update level
+    public void GoHome()
+    {
+        SceneManager.sceneLoaded += OnHomeSceneLoaded;  // Add listener for scene load
+        SceneManager.LoadScene("home");                 // Load home scene
+    }
+
+    // Called after the home scene is loaded
+    private void OnHomeSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name == "home")
+        {
+            Levels.Instance?.LoadLevel(); // Call UpdateLevel in Levels instance
+            SceneManager.sceneLoaded -= OnHomeSceneLoaded; // Remove listener
+        }
+    }
+
+    // Reload the current scene and reset values
     public void ReloadScene()
     {
-        // Reload the current scene
+        timers = true;
         score = 0;                       // Reset score
         timer = 60f;                      // Reset timer
         spawn = true;                     // Allow spawning again
-        PopUp.SetActive(false);           // Hide the pop-up
-        UpdateScoreDisplay();             // Reset the score display
-        UpdateTimerDisplay();             // Reset the timer display
-
+        Win.SetActive(false);             // Hide win UI
+        fail.SetActive(false);            // Hide fail UI
+        FinalScore1.text = "";
+        FinalScore2.text = "";
+        UpdateScoreDisplay();             // Reset score display
+        UpdateTimerDisplay();             // Reset timer display
     }
-    // Method to get the current score
-    public int GetScore()
+
+    // Proceed to the next level
+    public void nextScene()
     {
-        return score;
+        SceneManager.LoadScene(NextLevel);
     }
 }
